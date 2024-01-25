@@ -1,0 +1,27 @@
+---
+cfssl_csr_template:
+  CN: "{{ cert_csr_cn }}"
+  hosts:
+    - localhost
+    - 127.0.0.1 
+    - "{{ cert_csr_cn }}"
+  key:
+    algo: ecdsa
+    size: 256
+  names:
+    - C: "{{ cert_c }}"
+      L: "{{ cert_l }}"
+      O: "{{ cert_o }}"
+      OU: "{{ cert_ou }}"
+      ST: "{{ cert_st }}"
+
+cfssl_generate_certs:
+  - cn: "{{ ansible_nodename }}"
+    profile: "peer"
+    path: /data/nomad/nomad.d
+  - cn: "client.avcn.local"
+    profile: "client"
+    path: /data/nomad/nomad.d
+  - cn: "cli.avcn.local"
+    profile: "cli"
+    path: /data/nomad/nomad.d

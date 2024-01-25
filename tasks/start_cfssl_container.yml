@@ -1,0 +1,63 @@
+---
+- name: Create temporary config
+  delegate_to: localhost
+  ansible.builtin.tempfile:
+    state: directory
+    suffix: cfssl
+  register: workdir
+
+- name: Debug
+  ansible.builtin.debug:
+    msg: "{{ workdir }}"
+    verbosity: 1
+
+- name: Copy cfssl config
+  ansible.builtin.copy:
+    dest: "{{ workdir.path }}/config.json"
+    content: "{{ cfssl_container_config | to_json }}"
+    mode: "0640"
+
+- name: Create directory for certificates
+  ansible.builtin.file:
+    path: "{{ workdir.path }}/{{ item }}"
+    state: "directory"
+    mode: "0754"
+  loop:
+    - "root"
+    - "intermediate"
+
+- name: Copy Intermediate CA key
+  ansible.builtin.copy:
+    dest: "{{ workdir.path }}/{{ cfssl_init_intermediate_key_path }}"
+    content: "{{ cert_intermediate_ca_key }}"
+    decrypt: true
+    mode: "0640"
+
+- name: Copy Intermediate CA
+  ansible.builtin.copy:
+    dest: "{{ workdir.path }}/{{ cfssl_init_intermediate_ca_path }}"
+    content: "{{ cert_intermediate_ca }}"
+    mode: "0640"
+
+- name: Copy Root CA
+  ansible.builtin.copy:
+    dest: "{{ workdir.path }}/{{ cfssl_init_root_ca_path }}"
+    content: "{{ cert_root_ca }}"
+    mode: "0640"
+
+- name: Create a cfssl container
+  delegate_to: localhost
+  community.docker.docker_container:
+    name: "{{ cfssl_container_name }}"
+    image: "{{ cfssl_container_image }}"
+    command: >
+      serve --address 0.0.0.0
+      -config {{ cfssl_container_workdir }}/config.json
+      -ca-key {{ cfssl_container_workdir }}/{{ cfssl_init_intermediate_key_path }}
+      -ca {{ cfssl_container_workdir }}/{{ cfssl_init_intermediate_ca_path }}
+      -int-bundle {{ cfssl_container_workdir }}/{{ cfssl_init_intermediate_ca_path }}
+      -ca-bundle {{ cfssl_container_workdir }}/{{ cfssl_init_root_ca_path }}
+    published_ports:
+      - 8888:8888
+    volumes:
+      - "{{ workdir.path }}:{{ cfssl_container_workdir }}"

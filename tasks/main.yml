@@ -1,0 +1,16 @@
+---
+# tasks file for cloudflare-cfssl
+
+- name: Start CFSSL Docker container
+  delegate_to: localhost
+  ansible.builtin.import_tasks:
+    file: start_cfssl_container.yml
+
+- name: Generate certs
+  vars:
+    cert_csr_cn: "{{ item.cn }}"
+    profile: "{{ item.profile }}"
+    path: "{{ item.path }}"
+  ansible.builtin.include_tasks:
+    file: generate_cert.yml
+  loop: "{{ cfssl_generate_certs }}"

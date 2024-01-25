@@ -1,0 +1,72 @@
+cert_c: "PH"
+cert_l: "Manila"
+cert_o: "Default Org"
+cert_ou: "Default Org Unit"
+cert_st: "St"
+cert_intermediate_cn: "Default Intermediate"
+cert_root_cn: "Default Root"
+cert_algo: "rsa"
+cert_size: 2048
+cert_expiry: "87600h"
+cert_intermediate_ca:
+cert_intermediate_ca_key:
+cert_root_ca:
+
+cfssl_auth_key: 0123456789ABCDEF0123456789ABCDEF
+
+cfssl_container_config:
+  signing:
+    default:
+      expiry: 8760h
+    profiles:
+      server:
+        usages:
+          - signing
+          - digital signing
+          - key encipherment
+          - server auth
+        expiry: 8760h
+        auth_key: key1
+      peer:
+        usages:
+          - signing
+          - digital signing
+          - key encipherment
+          - server auth
+          - client auth
+        expiry: 8760h
+        auth_key: key1
+      client:
+        usages:
+          - signing
+          - digital signing
+          - key encipherment
+          - client auth
+        expiry: 8760h
+        auth_key: key1
+      cli:
+        usages: 
+          - signing
+          - key encipherment
+        expiry: 8760h
+        auth_key: key1
+  auth_keys:
+    key1:
+      key: "{{ cfssl_auth_key }}"
+      type: standard
+
+cfssl_container_workdir: "/cfssl"
+
+cfssl_ca_server: "http://localhost:8888"
+cfssl_config:  
+  signing:
+    default:
+      auth_remote:
+        remote: caserver
+        auth_key: key1
+  auth_keys:
+    key1:
+      key: "{{ cfssl_auth_key }}"
+      type: standard
+  remotes:
+    caserver: "{{ cfssl_ca_server }}"

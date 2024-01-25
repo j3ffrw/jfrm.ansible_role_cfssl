@@ -1,0 +1,78 @@
+---
+# 
+# Creates initial root and intermediate CA needed for running cfssl
+# as a webservice for singning server and client certificates.
+#
+
+- name: Ensure directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: "directory"
+    mode: "0754"
+  loop: "{{ cfssl_ca_init_directories }}"
+
+- name: Check if Root CA exists
+  ansible.builtin.stat:
+    path: "{{ cfssl_ca_init_workdir }}/{{ cfssl_init_root_key_path }}"
+  register: root_ca_reg
+
+- name: Generate Root CA
+  when:
+    - root_ca_reg.stat.exists is defined
+    - not root_ca_reg.stat.exists
+  block:
+    - name: Copy root csr
+      ansible.builtin.copy:
+        dest: "{{ cfssl_ca_init_workdir }}/{{ cfssl_init_root_csr_json_path }}"
+        content: "{{ cfssl_root_csr | to_json }}"
+        mode: "0640"
+
+    - name: Generate private key and CSR
+      ansible.builtin.shell: "cfssl gencert -initca {{ cfssl_init_root_csr_json_path }} | cfssljson -bare {{ cfssl_init_root_ca_prefix_path }}"
+      args:
+        chdir: "{{ cfssl_ca_init_workdir }}/"
+        creates: "{{ cfssl_init_root_key_path }}"
+
+    - name: Secure root CA key
+      ansible.builtin.debug:
+        msg: "Securely store {{ cfssl_ca_init_workdir }}/{{ cfssl_init_root_key_path }} and delete from workdir"
+
+- name: Check if Intermediate CA exists
+  ansible.builtin.stat:
+    path: "{{ cfssl_ca_init_workdir }}/{{ cfssl_init_intermediate_key_path }}"
+  register: intermediate_ca_reg
+
+- name: Generate Intermediate CA
+  when:
+    - intermediate_ca_reg.stat.exists is defined
+    - not intermediate_ca_reg.stat.exists
+  block:
+    - name: Copy Intermediate CSR
+      ansible.builtin.copy:
+        dest: "{{ cfssl_ca_init_workdir }}/{{ cfssl_init_intermediate_csr_json_path }}"
+        content: "{{ cfssl_intermediate_csr | to_json }}"
+        mode: "0640"
+
+    - name: Generate private key and CSR
+      ansible.builtin.shell: "cfssl genkey {{ cfssl_init_intermediate_csr_json_path }} | cfssljson -bare {{ cfssl_init_intermediate_csr_bare_path }}"
+      args:
+        chdir: "{{ cfssl_ca_init_workdir }}/"
+        creates: "{{ cfssl_init_intermediate_key_path }}"
+
+- name: Copy intermediate ca config to workdir
+  ansible.builtin.copy:
+    dest: "{{ cfssl_ca_init_workdir }}/config.json"
+    content: "{{ cfssl_intermediate_config | to_json }}"
+    mode: "0640"
+
+- name: Sign intermediate CA with root CA
+  ansible.builtin.shell: |
+    cfssl sign -ca {{ cfssl_init_root_ca_prefix_path }}.pem \
+      -ca-key "{{ cfssl_init_root_key_path }}" \
+      -config config.json \
+      -profile intermediate \
+      {{ cfssl_init_intermediate_csr_prefix_path }}.csr \
+    | cfssljson -bare {{ cfssl_init_intermediate_csr_prefix_path }}
+  args:
+    chdir: "{{ cfssl_ca_init_workdir }}/"
+    creates: "{{ cfssl_init_intermediate_ca_path }}"

@@ -1,0 +1,12 @@
+galaxy_info:
+  author: Jefferson Fermo
+  description: Tasks and roles to manage Cloudflare's CFSSL PKI toolkit
+  company: 
+  namespace: j3ffrw
+  role_name: cfssl
+
+  min_ansible_version: 2.9
+
+  galaxy_tags: []
+
+dependencies: []

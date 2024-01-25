@@ -1,0 +1,52 @@
+cfssl_ca_init_workdir: "output"
+cfssl_ca_init_directories: 
+  - "{{ cfssl_ca_init_workdir }}/certificates"
+  - "{{ cfssl_ca_init_workdir }}/intermediate"
+  - "{{ cfssl_ca_init_workdir }}/root"
+
+cfssl_init_root_csr_json_path: "root/root-csr.json"
+cfssl_init_root_ca_prefix_path: "root/root-ca"
+cfssl_init_root_key_path: "root/root-ca-key.pem"
+cfssl_init_root_ca_path: "root/root-ca.pem"
+cfssl_init_intermediate_csr_json_path: "intermediate/intermediate-csr.json"
+cfssl_init_intermediate_csr_prefix_path: "intermediate/intermediate-ca"
+cfssl_init_intermediate_key_path: "intermediate/intermediate-ca-key.pem"
+cfssl_init_intermediate_ca_path: "intermediate/intermediate-ca.pem"
+
+cfssl_root_csr: 
+  CN: "{{ cert_root_cn }}"
+  key: 
+    algo: "{{ cert_algo }}"
+    size: "{{ cert_size }}"
+  names:
+    - C: "{{ cert_c }}"
+      L: "{{ cert_l }}"
+      O: "{{ cert_o }}"
+      OU: "{{ cert_ou }}"
+  ca:
+    expiry: "{{ cert_expiry }}"
+
+cfssl_intermediate_csr: 
+  CN: "{{ cert_intermediate_cn }}"
+  key: 
+    algo: "{{ cert_algo }}"
+    size: "{{ cert_size }}"
+  names:
+    - C: "{{ cert_c }}"
+      L: "{{ cert_l }}"
+      O: "{{ cert_o }}"
+      OU: "{{ cert_ou }}"
+
+cfssl_intermediate_config:
+  signing:
+    default:
+      expiry: 8760h
+    profiles:
+      intermediate:
+        usages:
+          - cert sign
+          - crl sign
+        expiry: 70080h
+        ca_constraint:
+          is_ca: true
+          max_path_len: 1

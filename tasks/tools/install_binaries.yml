@@ -1,0 +1,14 @@
+---
+- name: Gather facts
+  ansible.builtin.gather_facts:
+
+- name: Download binaries
+  ansible.builtin.get_url:
+    url: "{{ cfssl_download_path }}"
+    dest: "{{ cfssl_bin_path }}/{{ cfssl_binary_name }}"
+    mode: "0755"
+    group: "root"
+    owner: "root"
+  loop: "{{ cfssl_binaries }}"
+  vars:
+    cfssl_binary_name: "{{ item }}"

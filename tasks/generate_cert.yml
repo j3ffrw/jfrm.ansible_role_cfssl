@@ -1,0 +1,44 @@
+---
+- name: Create temp file for config
+  delegate_to: localhost
+  ansible.builtin.tempfile:
+    state: file
+  register: config_file
+
+- name: Create config
+  delegate_to: localhost
+  ansible.builtin.copy:
+    dest: "{{ config_file.path }}"
+    content: "{{ cfssl_config | to_json }}"
+    mode: "0640"
+
+- name: Create temp file for csr
+  delegate_to: localhost
+  ansible.builtin.tempfile:
+    state: file
+  register: csr_file
+
+- name: Create config
+  delegate_to: localhost
+  ansible.builtin.copy:
+    dest: "{{ csr_file.path }}"
+    content: "{{ cfssl_csr_template | to_json }}"
+    mode: "0640"
+
+- name: Generate cert
+  delegate_to: localhost
+  changed_when: true
+  ansible.builtin.command: "cfssl gencert -config {{ config_file.path }} -profile {{ profile }} {{ csr_file.path }}"
+  register: cert
+
+- name: Create cert
+  ansible.builtin.copy:
+    dest: "{{ path }}/{{ profile }}-ca.pem"
+    content: "{{ (cert.stdout | from_json).cert }}"
+    mode: "0640"
+
+- name: Create key
+  ansible.builtin.copy:
+    dest: "{{ path }}/{{ profile }}-key.pem"
+    content: "{{ (cert.stdout | from_json).key }}"
+    mode: "0640"

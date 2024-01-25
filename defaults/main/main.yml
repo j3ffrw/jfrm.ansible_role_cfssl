@@ -1,0 +1,12 @@
+cfssl_version: "1.6.4"
+cfssl_bin_path: "/usr/local/bin"
+cfssl_download_path:
+  "https://github.com/cloudflare/cfssl/releases/download\
+   /v{{ cfssl_version }}\
+   /{{ cfssl_binary_name }}_{{ cfssl_version }}_linux_{{ (ansible_architecture == 'aarch64') | ternary('arm64', 'amd64') }}"
+cfssl_binaries:
+  - cfssl
+  - cfssljson
+
+cfssl_container_image: "cfssl/cfssl:v{{ cfssl_version }}"
+cfssl_container_name: "cfssl"
