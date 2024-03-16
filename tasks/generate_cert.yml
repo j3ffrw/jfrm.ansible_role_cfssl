@@ -25,6 +25,13 @@
     content: "{{ cfssl_csr_template | to_json }}"
     mode: "0640"
 
+- name: Create directory for generated certs
+  delegate_to: localhost
+  ansible.builtin.file:
+    path: "{{ path }}"
+    state: "directory"
+    mode: "0750"
+
 - name: Generate cert
   delegate_to: localhost
   changed_when: true
