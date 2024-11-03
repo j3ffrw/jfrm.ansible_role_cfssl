@@ -12,40 +12,60 @@
     content: "{{ cfssl_config | to_json }}"
     mode: "0640"
 
-- name: Create temp file for csr
+- name: Create temp file for CSR
   delegate_to: localhost
   ansible.builtin.tempfile:
     state: file
   register: csr_file
 
-- name: Create config
+- name: Create CSR
   delegate_to: localhost
   ansible.builtin.copy:
     dest: "{{ csr_file.path }}"
     content: "{{ cfssl_csr_template | to_json }}"
     mode: "0640"
 
-- name: Create directory for generated certs
-  delegate_to: localhost
-  ansible.builtin.file:
-    path: "{{ path }}"
-    state: "directory"
-    mode: "0750"
-
 - name: Generate cert
   delegate_to: localhost
   changed_when: true
-  ansible.builtin.command: "cfssl gencert -config {{ config_file.path }} -profile {{ profile }} {{ csr_file.path }}"
+  ansible.builtin.command: "cfssl gencert -config {{ config_file.path }} -profile {{ cfssl_generate_profile }} {{ csr_file.path }}"
   register: cert
 
-- name: Create cert
+- name: Get intermediate cert
+  delegate_to: localhost
+  changed_when: true
+  ansible.builtin.command: "cfssl info -config {{ config_file.path }}"
+  register: intermediate_cert
+
+- name: Show generated cert
+  ansible.builtin.debug:
+    msg: "{{ cert.stdout | from_json }}"
+    verbosity: 1
+
+- name: Create directory for generated certs
+  become: "{{ cfssl_become }}"
+  ansible.builtin.file:
+    path: "{{ cfssl_generated_cert_path }}"
+    state: "directory"
+    mode: "{{ cfssl_generated_cert_path_permission | default(omit) }}"
+
+- name: Create certificate
+  become: "{{ cfssl_become }}"
   ansible.builtin.copy:
-    dest: "{{ path }}/{{ profile }}-ca.pem"
+    dest: "{{ cfssl_generated_cert_path }}/{{ cfssl_certificate_filename }}"
     content: "{{ (cert.stdout | from_json).cert }}"
-    mode: "0640"
+    mode: "{{ cfssl_generated_cert_permission | default(omit) }}"
+
+- name: Create full chain certificate
+  become: "{{ cfssl_become }}"
+  ansible.builtin.copy:
+    dest: "{{ cfssl_generated_cert_path }}/{{ cfssl_certificate_full_chain_filename }}"
+    content: "{{ (cert.stdout | from_json).cert ~ (intermediate_cert.stdout | from_json).certificate }}"
+    mode: "{{ cfssl_generated_cert_permission | default(omit) }}"
 
 - name: Create key
+  become: "{{ cfssl_become }}"
   ansible.builtin.copy:
-    dest: "{{ path }}/{{ profile }}-key.pem"
+    dest: "{{ cfssl_generated_cert_path }}/{{ cfssl_certificate_key_filename }}"
     content: "{{ (cert.stdout | from_json).key }}"
-    mode: "0640"
+    mode: "{{ cfssl_generated_cert_permission | default(omit) }}"

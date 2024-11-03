@@ -7,6 +7,7 @@ Requirements
 ------------
 
 * ansible >= 2.14.x
+* export ANSIBLE_JINJA2_NATIVE=true
 
 Role Variables
 --------------

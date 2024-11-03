@@ -8,9 +8,9 @@
 
 - name: Generate certs
   vars:
-    cert_csr_cn: "{{ item.cn }}"
-    profile: "{{ item.profile }}"
-    path: "{{ item.path }}"
+    cfssl_csr_cn: "{{ item.cfssl_csr_cn }}"
+    cfssl_generate_profile: "{{ item.cfssl_generate_profile }}"
+    cfssl_generated_cert_path: "{{ item.cfssl_generated_cert_path }}"
   ansible.builtin.include_tasks:
     file: generate_cert.yml
   loop: "{{ cfssl_generate_certs }}"

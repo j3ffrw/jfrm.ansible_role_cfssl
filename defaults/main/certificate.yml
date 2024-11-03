@@ -45,7 +45,7 @@ cfssl_container_config:
         expiry: 8760h
         auth_key: key1
       cli:
-        usages: 
+        usages:
           - signing
           - key encipherment
         expiry: 8760h
@@ -58,7 +58,7 @@ cfssl_container_config:
 cfssl_container_workdir: "/cfssl"
 
 cfssl_ca_server: "http://localhost:8888"
-cfssl_config:  
+cfssl_config:
   signing:
     default:
       auth_remote:
@@ -70,3 +70,8 @@ cfssl_config:
       type: standard
   remotes:
     caserver: "{{ cfssl_ca_server }}"
+
+cfssl_certificate_filename: "{{ cfssl_generate_profile }}.crt"
+cfssl_certificate_full_chain_filename: "cert-chain.crt"
+cfssl_certificate_key_filename: "{{ cfssl_generate_profile }}.key"
+cfssl_become: "{{ inventory_hostname == 'localhost' | ternary(false, true) }}"

@@ -1,13 +1,17 @@
 ---
+cfssl_csr_default_hosts: # alt subject names
+  - "{{ cfssl_csr_cn }}"
+  #  - localhost
+  #  - 127.0.0.1
+cfssl_csr_default_algo: ecdsa
+cfssl_csr_default_size: 256
+
 cfssl_csr_template:
-  CN: "{{ cert_csr_cn }}"
-  hosts:
-    - localhost
-    - 127.0.0.1 
-    - "{{ cert_csr_cn }}"
+  CN: "{{ cfssl_csr_cn }}"
+  hosts: "{{ cfssl_csr_hosts | default(cfssl_csr_default_hosts) }}"
   key:
-    algo: ecdsa
-    size: 256
+    algo: "{{ cfssl_csr_algo | default(cfssl_csr_default_algo) }}"
+    size: "{{ cfssl_csr_default_size | default(cfssl_csr_default_size) }}"
   names:
     - C: "{{ cert_c }}"
       L: "{{ cert_l }}"
@@ -15,13 +19,13 @@ cfssl_csr_template:
       OU: "{{ cert_ou }}"
       ST: "{{ cert_st }}"
 
-cfssl_generate_certs:
-  - cn: "{{ ansible_nodename }}"
-    profile: "peer"
-    path: /data/nomad/nomad.d
-  - cn: "client.avcn.local"
-    profile: "client"
-    path: /data/nomad/nomad.d
-  - cn: "cli.avcn.local"
-    profile: "cli"
-    path: /data/nomad/nomad.d
+cfssl_generate_certs: []
+#  - cn: "{{ ansible_nodename }}"
+#    cfssl_profile: "peer"
+#    path: /data/nomad/nomad.d
+#  - cn: "client.avcn.local"
+#    cfssl_profile: "client"
+#    path: /data/nomad/nomad.d
+#  - cn: "cli.avcn.local"
+#    cfssl_profile: "cli"
+#    path: /data/nomad/nomad.d

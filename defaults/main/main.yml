@@ -10,3 +10,6 @@ cfssl_binaries:
 
 cfssl_container_image: "cfssl/cfssl:v{{ cfssl_version }}"
 cfssl_container_name: "cfssl"
+
+cfssl_generate_nginx_cert: false
+cfssl_generate_nginx_cert_name: "nginx"
