@@ -1,0 +1,61 @@
+---
+
+- name: Transfer certificates
+  when:
+    - ansible_connection != 'ansible.netcommon.network_cli'
+  block:
+    - name: Create directory for generated certs
+      become: "{{ cfssl_become }}"
+      ansible.builtin.file:
+        path: "{{ cfssl_generated_cert_path }}"
+        state: "directory"
+        mode: "{{ cfssl_generated_cert_path_permission | default(omit) }}"
+
+    - name: Create certificate
+      become: "{{ cfssl_become }}"
+      ansible.builtin.copy:
+        dest: "{{ cfssl_generated_cert_path }}/{{ cfssl_certificate_filename }}"
+        content: "{{ (cert.stdout | from_json).cert }}"
+        mode: "{{ cfssl_generated_cert_permission | default(omit) }}"
+
+    - name: Create full chain certificate
+      become: "{{ cfssl_become }}"
+      ansible.builtin.copy:
+        dest: "{{ cfssl_generated_cert_path }}/{{ cfssl_certificate_full_chain_filename }}"
+        content: "{{ (cert.stdout | from_json).cert ~ (intermediate_cert.stdout | from_json).certificate }}"
+        mode: "{{ cfssl_generated_cert_permission | default(omit) }}"
+
+    - name: Create key
+      become: "{{ cfssl_become }}"
+      ansible.builtin.copy:
+        dest: "{{ cfssl_generated_cert_path }}/{{ cfssl_certificate_key_filename }}"
+        content: "{{ (cert.stdout | from_json).key }}"
+        mode: "{{ cfssl_generated_cert_permission | default(omit) }}"
+
+- name: Transfer certificates
+  when:
+    - ansible_connection == 'ansible.netcommon.network_cli'
+  block:
+    - name: Create certificate
+      ansible.netcommon.net_put:
+        src: templates/net_put.file.j2
+        dest: "{{ cfssl_generated_cert_path }}/{{ cfssl_certificate_filename }}"
+        mode: "{{ cfssl_net_put_mode }}"
+      vars:
+        cfssl_template_content: "{{ (cert.stdout | from_json).cert }}"
+
+    - name: Create full chain certificate
+      ansible.netcommon.net_put:
+        src: templates/net_put.file.j2
+        dest: "{{ cfssl_generated_cert_path }}/{{ cfssl_certificate_full_chain_filename }}"
+        mode: "{{ cfssl_net_put_mode }}"
+      vars:
+        cfssl_template_content: "{{ (cert.stdout | from_json).cert ~ (intermediate_cert.stdout | from_json).certificate }}"
+
+    - name: Create key
+      ansible.netcommon.net_put:
+        src: templates/net_put.file.j2
+        dest: "{{ cfssl_generated_cert_path }}/{{ cfssl_certificate_key_filename }}"
+        mode: "{{ cfssl_net_put_mode }}"
+      vars:
+        cfssl_template_content: "{{ (cert.stdout | from_json).key }}"

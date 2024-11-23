@@ -13,3 +13,4 @@ cfssl_container_name: "cfssl"
 
 cfssl_generate_nginx_cert: false
 cfssl_generate_nginx_cert_name: "nginx"
+cfssl_net_put_mode: "text"

@@ -42,30 +42,6 @@
     msg: "{{ cert.stdout | from_json }}"
     verbosity: 1
 
-- name: Create directory for generated certs
-  become: "{{ cfssl_become }}"
-  ansible.builtin.file:
-    path: "{{ cfssl_generated_cert_path }}"
-    state: "directory"
-    mode: "{{ cfssl_generated_cert_path_permission | default(omit) }}"
-
-- name: Create certificate
-  become: "{{ cfssl_become }}"
-  ansible.builtin.copy:
-    dest: "{{ cfssl_generated_cert_path }}/{{ cfssl_certificate_filename }}"
-    content: "{{ (cert.stdout | from_json).cert }}"
-    mode: "{{ cfssl_generated_cert_permission | default(omit) }}"
-
-- name: Create full chain certificate
-  become: "{{ cfssl_become }}"
-  ansible.builtin.copy:
-    dest: "{{ cfssl_generated_cert_path }}/{{ cfssl_certificate_full_chain_filename }}"
-    content: "{{ (cert.stdout | from_json).cert ~ (intermediate_cert.stdout | from_json).certificate }}"
-    mode: "{{ cfssl_generated_cert_permission | default(omit) }}"
-
-- name: Create key
-  become: "{{ cfssl_become }}"
-  ansible.builtin.copy:
-    dest: "{{ cfssl_generated_cert_path }}/{{ cfssl_certificate_key_filename }}"
-    content: "{{ (cert.stdout | from_json).key }}"
-    mode: "{{ cfssl_generated_cert_permission | default(omit) }}"
+- name: Transfer
+  ansible.builtin.import_tasks:
+    file: transfer_cert.yml
